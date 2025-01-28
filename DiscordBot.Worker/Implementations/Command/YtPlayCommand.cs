@@ -2,16 +2,17 @@
 using Discord.Audio;
 using Discord.Commands;
 using System.Diagnostics;
+using YoutubeExplode;
+using YoutubeVideoDownloader.Domain.Objects;
+using YoutubeVideoDownloader.Implementations;
 
 namespace DiscordBot.Worker.Implementations.Command
 {
-    public class CommandHandler : ModuleBase<SocketCommandContext>
+    public class YtPlayCommand : ModuleBase<SocketCommandContext>
     {
         [Command("ytPlay")]
         public async Task YtDownloadCommand([Remainder] string videoUrl)
         {
-            VideoCommand videoCommand = new();
-
             var channel = (Context.User as IGuildUser)?.VoiceChannel;
 
             if (channel == null)
@@ -23,7 +24,7 @@ namespace DiscordBot.Worker.Implementations.Command
             var audioClient = await channel.ConnectAsync();
 
 
-            var video = await Task.Run(() => videoCommand.GetVideoAsync(videoUrl));
+            var video = await Task.Run(() => GetVideoAsync(videoUrl));
             _ = Task.Run(async () =>
             {
                 await SendAsync(audioClient, video.Path);
@@ -58,6 +59,17 @@ namespace DiscordBot.Worker.Implementations.Command
                 await discord.FlushAsync();
                 File.Delete(path);
             }
+        }
+
+        private async Task<YtVideo> GetVideoAsync(string url)
+        {
+            var client = new YoutubeClient();
+
+            Downloader downloader = new(client);
+
+            var result = await downloader.Download(url);
+
+            return result;
         }
     }
 }
