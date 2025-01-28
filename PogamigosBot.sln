@@ -10,28 +10,6 @@ EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{A714AD66-E97B-44A6-9F54-636AA6E7E1AB}"
 	ProjectSection(SolutionItems) = preProject
 		.gitignore = .gitignore
-		DiscordBot.Worker\Binaries\libopus.dll = DiscordBot.Worker\Binaries\libopus.dll
-		DiscordBot.Worker\Binaries\libopus.dll.md5 = DiscordBot.Worker\Binaries\libopus.dll.md5
-		DiscordBot.Worker\Binaries\libopus.dll.md5.sig = DiscordBot.Worker\Binaries\libopus.dll.md5.sig
-		DiscordBot.Worker\Binaries\libopus.dll.sha1 = DiscordBot.Worker\Binaries\libopus.dll.sha1
-		DiscordBot.Worker\Binaries\libopus.dll.sha1.sig = DiscordBot.Worker\Binaries\libopus.dll.sha1.sig
-		DiscordBot.Worker\Binaries\libopus.dll.sha256 = DiscordBot.Worker\Binaries\libopus.dll.sha256
-		DiscordBot.Worker\Binaries\libopus.dll.sha256.sig = DiscordBot.Worker\Binaries\libopus.dll.sha256.sig
-		DiscordBot.Worker\Binaries\libopus.dll.sha384 = DiscordBot.Worker\Binaries\libopus.dll.sha384
-		DiscordBot.Worker\Binaries\libopus.dll.sha384.sig = DiscordBot.Worker\Binaries\libopus.dll.sha384.sig
-		DiscordBot.Worker\Binaries\libopus.dll.sha512 = DiscordBot.Worker\Binaries\libopus.dll.sha512
-		DiscordBot.Worker\Binaries\libopus.dll.sha512.sig = DiscordBot.Worker\Binaries\libopus.dll.sha512.sig
-		DiscordBot.Worker\Binaries\libsodium.dll = DiscordBot.Worker\Binaries\libsodium.dll
-		DiscordBot.Worker\Binaries\libsodium.dll.md5 = DiscordBot.Worker\Binaries\libsodium.dll.md5
-		DiscordBot.Worker\Binaries\libsodium.dll.md5.sig = DiscordBot.Worker\Binaries\libsodium.dll.md5.sig
-		DiscordBot.Worker\Binaries\libsodium.dll.sha1 = DiscordBot.Worker\Binaries\libsodium.dll.sha1
-		DiscordBot.Worker\Binaries\libsodium.dll.sha1.sig = DiscordBot.Worker\Binaries\libsodium.dll.sha1.sig
-		DiscordBot.Worker\Binaries\libsodium.dll.sha256 = DiscordBot.Worker\Binaries\libsodium.dll.sha256
-		DiscordBot.Worker\Binaries\libsodium.dll.sha256.sig = DiscordBot.Worker\Binaries\libsodium.dll.sha256.sig
-		DiscordBot.Worker\Binaries\libsodium.dll.sha384 = DiscordBot.Worker\Binaries\libsodium.dll.sha384
-		DiscordBot.Worker\Binaries\libsodium.dll.sha384.sig = DiscordBot.Worker\Binaries\libsodium.dll.sha384.sig
-		DiscordBot.Worker\Binaries\libsodium.dll.sha512 = DiscordBot.Worker\Binaries\libsodium.dll.sha512
-		DiscordBot.Worker\Binaries\libsodium.dll.sha512.sig = DiscordBot.Worker\Binaries\libsodium.dll.sha512.sig
 	EndProjectSection
 EndProject
 Global

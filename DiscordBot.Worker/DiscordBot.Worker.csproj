@@ -20,15 +20,13 @@
   </ItemGroup>
 
 	<ItemGroup>
-		<None Update="Binaries\opus.dll">
-			<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-		</None>
-		<None Update="Binaries\sodium.dll">
-			<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-		</None>
+		<Folder Include="videos\" />
 	</ItemGroup>
 
 	<ItemGroup>
-	  <Folder Include="videos\" />
+		<None Include="Binaries\*.*">
+			<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+			<Link>%(Filename)%(Extension)</Link>
+		</None>
 	</ItemGroup>
 </Project>
