@@ -1,12 +1,8 @@
 using Discord.Commands;
 using DiscordBot.Worker;
-using DiscordBot.Worker.Implementations.Command;
 using System.Reflection;
-using System.Runtime.InteropServices;
 
 var builder = Host.CreateApplicationBuilder(args);
-
-builder.Services.AddSingleton<CommandHandler>();
 
 builder.Services.AddHostedService<Worker>();
 
