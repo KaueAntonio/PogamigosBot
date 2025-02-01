@@ -1,40 +1,70 @@
-﻿using YoutubeExplode;
-using YoutubeExplode.Converter;
+﻿using System.Diagnostics;
+using System.Text.RegularExpressions;
 using YoutubeVideoDownloader.Domain.Interfaces;
 using YoutubeVideoDownloader.Domain.Objects;
 
 namespace YoutubeVideoDownloader.Implementations
 {
-    public class Downloader(YoutubeClient youtubeClient) : IDownloader
+    public class Downloader : IDownloader
     {
-        private readonly YoutubeClient _youtubeClient = youtubeClient;
+        private const string CookiesPath = "cookies.txt";
+        private const string AudioFolder = "audios";
 
         public async Task<YtVideo> Download(string url)
         {
-            var video = await _youtubeClient.Videos.GetAsync(url);
+            Directory.CreateDirectory(AudioFolder);
 
-            string sanitizedTitle = SanitizeFileName(video.Title);
-            string outputPath = Path.Combine(Environment.CurrentDirectory, "videos", $"{sanitizedTitle}.mp4");
+            string videoTitle = await GetVideoTitleFromUrl(url);
+            string sanitizedTitle = SanitizeFileName(videoTitle);
 
-            Directory.CreateDirectory("videos");
+            var outputPath = Path.Combine(AudioFolder, sanitizedTitle);
 
-            try
+            var process = new Process
             {
-                await _youtubeClient.Videos.DownloadAsync(video.Id, outputPath);
-
-                var fileBytes = await File.ReadAllBytesAsync(outputPath);
-
-                return new YtVideo()
+                StartInfo = new ProcessStartInfo
                 {
-                    Title = video.Title + ".mp4",
-                    File = fileBytes,
-                    Path = outputPath
-                };
-            }
-            catch (Exception ex)
+                    FileName = "yt-dlp.exe",
+                    Arguments = $"--cookies {CookiesPath} -x --audio-format mp3 -o \"{outputPath}.%(ext)s\" {url}",
+                    RedirectStandardOutput = true,
+                    RedirectStandardError = true,
+                    UseShellExecute = false,
+                    CreateNoWindow = true
+                }
+            };
+
+            process.Start();
+            await process.WaitForExitAsync();
+
+            if (!File.Exists(outputPath + ".mp3"))
+                throw new Exception("Erro ao baixar o áudio.");
+
+            var fileBytes = await File.ReadAllBytesAsync(outputPath + ".mp3");
+
+            return new YtVideo()
             {
-                Console.Error.WriteLine($"Erro: {ex.Message}");
-                throw;
+                Title = sanitizedTitle + ".mp3",
+                File = fileBytes,
+                Path = outputPath + ".mp3"
+            };
+        }
+
+        private async Task<string> GetVideoTitleFromUrl(string url)
+        {
+            using (HttpClient client = new HttpClient())
+            {
+                string htmlContent = await client.GetStringAsync(url);
+
+                string pattern = @"<meta\s+name=""title""\s+content=""([^""]+)"">";
+                Match match = Regex.Match(htmlContent, pattern);
+
+                if (match.Success)
+                {
+                    return match.Groups[1].Value;
+                }
+                else
+                {
+                    throw new Exception("Título do vídeo não encontrado.");
+                }
             }
         }
 

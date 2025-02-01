@@ -16,6 +16,7 @@
 
 	<ItemGroup>
 		<Folder Include="./ffmpeg-7.1-essentials_build" />
+		<Folder Include="videos\" />
 	</ItemGroup>
 
 </Project>

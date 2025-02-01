@@ -1,75 +1,143 @@
 ﻿using Discord;
 using Discord.Audio;
 using Discord.Commands;
+using DiscordBot.Worker.Domain.Interfaces;
 using System.Diagnostics;
-using YoutubeExplode;
-using YoutubeVideoDownloader.Domain.Objects;
-using YoutubeVideoDownloader.Implementations;
 
 namespace DiscordBot.Worker.Implementations.Command
 {
     public class YtPlayCommand : ModuleBase<SocketCommandContext>
     {
-        [Command("ytPlay")]
+        private readonly IMusicService _musicService;
+        private static IAudioClient _audioClient;
+        private AudioOutStream _audioStream;
+        private Process _currentFfmpegProcess;
+
+        public YtPlayCommand(IMusicService musicService)
+        {
+            _musicService = musicService;
+        }
+
+        [Command("play")]
         public async Task YtDownloadCommand([Remainder] string videoUrl)
         {
             var channel = (Context.User as IGuildUser)?.VoiceChannel;
-
             if (channel == null)
             {
                 await ReplyAsync("Você precisa estar em um canal de voz!");
                 return;
             }
 
-            var audioClient = await channel.ConnectAsync();
-
-
-            var video = await Task.Run(() => GetVideoAsync(videoUrl));
-            _ = Task.Run(async () =>
+            if (_audioClient == null || _audioClient.ConnectionState != ConnectionState.Connected)
             {
-                await SendAsync(audioClient, video.Path);
-            });
+                _audioClient = await channel.ConnectAsync();
+            }
 
-            await ReplyAsync($"Tocando {video.Title}");
+            _musicService.Add(videoUrl);
+            await ReplyAsync($"Video adicionado.");
+
+            if (!_musicService.GetStatus())
+            {
+                _ = Task.Run(PlayQueueAsync);
+            }
         }
 
-        private Process CreateStream(string path)
+        [Command("skip")]
+        public async Task Skip()
         {
-            return Process.Start(new ProcessStartInfo
+            if (_musicService.GetStatus())
             {
-                FileName = "ffmpeg",
-                Arguments = $"-hide_banner -loglevel panic -i \"{path}\" -ac 2 -f s16le -ar 48000 pipe:1",
-                UseShellExecute = false,
-                RedirectStandardOutput = true,
-            });
+                if (_currentFfmpegProcess != null && !_currentFfmpegProcess.HasExited)
+                {
+                    try
+                    {
+                        _currentFfmpegProcess.Kill();
+                        await Task.Delay(500);
+                        _currentFfmpegProcess.Dispose();
+                    }
+                    catch (Exception ex)
+                    {
+                        await ReplyAsync($"Erro ao encerrar o processo FFmpeg: {ex.Message}");
+                    }
+                    finally
+                    {
+                        _currentFfmpegProcess = null;
+                    }
+                }
+
+                await PlayMusic();
+                await ReplyAsync("Música skipada.");
+            }
+            else
+            {
+                await ReplyAsync("Sem música na fila.");
+            }
+        }
+
+        private async Task PlayQueueAsync()
+        {
+            _musicService.SetStatus(true);
+            while (_musicService.HasNext())
+            {
+                try
+                {
+                    await PlayMusic();
+                }
+                catch (Exception ex)
+                {
+                    await ReplyAsync($"Erro: {ex.Message}");
+                }
+            }
+
+            _musicService.SetStatus(false);
+            await _audioClient.StopAsync();
+            _audioClient = null;
         }
 
         private async Task SendAsync(IAudioClient client, string path)
         {
-            using var ffmpeg = CreateStream(path);
-            using var output = ffmpeg.StandardOutput.BaseStream;
-            using var discord = client.CreatePCMStream(AudioApplication.Mixed);
+            _currentFfmpegProcess = _musicService.CreateStream(path);
+            using var outputStream = _currentFfmpegProcess.StandardOutput.BaseStream;
 
-            try 
+            _audioStream = client.CreatePCMStream(AudioApplication.Mixed);
+
+            try
             {
-                await output.CopyToAsync(discord);
+                await outputStream.CopyToAsync(_audioStream);
+                await _audioStream.FlushAsync();
             }
-            finally 
-            { 
-                await discord.FlushAsync();
-                File.Delete(path);
+            finally
+            {
+                await _audioStream.DisposeAsync();
+                _audioStream = null;
+
+                if (_currentFfmpegProcess != null && !_currentFfmpegProcess.HasExited)
+                {
+                    try
+                    {
+                        _currentFfmpegProcess.Kill();
+                        await Task.Delay(500);
+                        _currentFfmpegProcess.Dispose();
+                    }
+                    catch (Exception ex)
+                    {
+                        await ReplyAsync($"Erro ao encerrar o processo FFmpeg: {ex.Message}");
+                    }
+                    finally
+                    {
+                        _currentFfmpegProcess = null;
+                    }
+                }
             }
         }
 
-        private async Task<YtVideo> GetVideoAsync(string url)
+        private async Task PlayMusic()
         {
-            var client = new YoutubeClient();
+            var videoUrl = _musicService.PlayAnother();
+            var video = await _musicService.GetVideoAsync(videoUrl);
+            await ReplyAsync($"Tocando {video.Title}.");
 
-            Downloader downloader = new(client);
-
-            var result = await downloader.Download(url);
-
-            return result;
+            await SendAsync(_audioClient, video.Path);
         }
     }
 }
