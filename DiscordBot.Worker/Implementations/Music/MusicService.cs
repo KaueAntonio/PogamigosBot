@@ -43,7 +43,7 @@ namespace DiscordBot.Worker.Implementations.Music
                     Arguments = $"-hide_banner -loglevel panic -i \"{path}\" -ac 2 -f s16le -ar 48000 pipe:1",
                     UseShellExecute = false,
                     RedirectStandardOutput = true,
-                    CreateNoWindow = true
+                    CreateNoWindow = true,
                 }
             };
 

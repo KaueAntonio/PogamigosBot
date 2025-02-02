@@ -1,6 +1,7 @@
 ﻿using Discord.Commands;
 using DiscordBot.Worker.Domain.Interfaces;
 using DiscordBot.Worker.Implementations.Music;
+using DiscordBot.Worker.Implementations.OpenAi;
 using System.Reflection;
 
 namespace DiscordBot.Worker.Configurations
@@ -12,7 +13,9 @@ namespace DiscordBot.Worker.Configurations
             services.AddHostedService<Worker>();
 
             services.AddSingleton<IMusicService, MusicService>();
-            
+
+            services.AddSingleton<IOpenAiService, OpenAiService>();
+
             services.AddSingleton(provider =>
             {
                 var service = new CommandService(new CommandServiceConfig
