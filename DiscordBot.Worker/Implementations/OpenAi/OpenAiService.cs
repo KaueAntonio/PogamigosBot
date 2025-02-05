@@ -16,7 +16,6 @@ namespace DiscordBot.Worker.Implementations.OpenAi
             apiKey: configuration["Secrets:openAiKey"]
         );
 
-
         public async Task<string> AnswerAsync(string message)
         {
             ChatCompletion chatCompletion = await _chatClient.CompleteChatAsync(message);

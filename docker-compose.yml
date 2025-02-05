@@ -1,0 +1,6 @@
+services:
+  discordbot.worker:
+    image: ${DOCKER_REGISTRY-}discordbotworker
+    build:
+      context: .
+      dockerfile: DiscordBot.Worker/Dockerfile
