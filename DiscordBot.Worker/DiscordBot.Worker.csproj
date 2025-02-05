@@ -24,7 +24,6 @@
 
 	<ItemGroup>
 		<Folder Include="audios\" />
-		<Folder Include="Domain\Objects\" />
 		<Folder Include="videos\" />
 	</ItemGroup>
 
