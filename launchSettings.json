@@ -4,7 +4,8 @@
       "commandName": "DockerCompose",
       "commandVersion": "1.0",
       "serviceActions": {
-        "discordbot.worker": "StartDebugging"
+        "discordbot.worker": "StartDebugging",
+        "youtubevideodownloader": "StartDebugging"
       }
     }
   }

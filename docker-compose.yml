@@ -4,3 +4,10 @@ services:
     build:
       context: .
       dockerfile: DiscordBot.Worker/Dockerfile
+
+  youtubevideodownloader:
+    image: ${DOCKER_REGISTRY-}youtubevideodownloader
+    build:
+      context: .
+      dockerfile: YoutubeVideoDownloader/Dockerfile
+
