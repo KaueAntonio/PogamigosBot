@@ -22,6 +22,7 @@ namespace DiscordBot.Worker.Configurations
                 {
                     DefaultRunMode = RunMode.Async,
                     CaseSensitiveCommands = true,
+                    LogLevel = Discord.LogSeverity.Debug
                 });
 
                 service.AddModulesAsync(Assembly.GetEntryAssembly(), provider)

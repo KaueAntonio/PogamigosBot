@@ -8,29 +8,83 @@ namespace DiscordBot.Worker.Implementations.Music
 {
     public class MusicService : IMusicService
     {
-        private readonly ConcurrentQueue<string> _musicQueue = new();
-        public bool IsPlaying { get; set; } = false;
+        private readonly ConcurrentDictionary<ulong, ConcurrentQueue<string>> _musicQueues = [];
+        private readonly Dictionary<string, string> _musicNames = [];
+        private readonly ConcurrentDictionary<ulong, bool> _playingStates = new();
 
-        public void Add(string music)
+        public async void Add(ulong guildId, string music)
         {
-            _musicQueue.Enqueue(music);
+            var downloader = new Downloader();
+            var queue = _musicQueues.GetOrAdd(guildId, new ConcurrentQueue<string>());
+
+            queue.Enqueue(music);
+
+            var title = await downloader.GetVideoTitleFromUrl(music);
+            _musicNames.Add(music, title);
+
+            if (!_playingStates.TryGetValue(guildId, out var isPlaying) || !isPlaying)
+            {
+                await Task.Run(async () =>
+                {
+                    await downloader.Download(music);
+                });
+            }
         }
 
-        public string PlayAnother()
+        public List<string> GetQueue(ulong guildId)
         {
-            return _musicQueue.TryDequeue(out var music) ? music : throw new Exception("Nenhuma música na fila");
+            if (_musicQueues.TryGetValue(guildId, out var queue))
+            {
+                return [..queue];
+            }
+
+            return [];
         }
 
-        public bool HasNext() => !_musicQueue.IsEmpty;
+        public string PlayAnother(ulong guildId)
+        {
+            if (_musicQueues.TryGetValue(guildId, out var queue))
+            {
+                if (queue.TryDequeue(out var music))
+                {
+                    return music;
+                }
+            }
 
-        public bool GetStatus() => IsPlaying;
+            throw new Exception("Nenhuma música na fila");
+        }
 
-        public void SetStatus(bool isPlaying) => IsPlaying = isPlaying;
+        public bool HasNext(ulong guildId)
+        {
+            if (_musicQueues.TryGetValue(guildId, out var queue))
+            {
+                return !queue.IsEmpty;
+            }
+
+            return false;
+        }
+
+        public bool GetStatus(ulong guildId)
+        {
+            return _playingStates.TryGetValue(guildId, out var isPlaying) && isPlaying;
+        }
+
+        public void SetStatus(ulong guildId, bool isPlaying)
+        {
+            _playingStates[guildId] = isPlaying;
+        }
 
         public async Task<YtVideo> GetVideoAsync(string url)
         {
             var downloader = new Downloader();
             return await downloader.Download(url);
+        }
+
+        public string GetTitle(string key)
+        {
+            _musicNames.TryGetValue(key, out var name);
+
+            return name;
         }
 
         public Process CreateStream(string path)

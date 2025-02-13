@@ -1,0 +1,28 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Content Include="Utils\bruno.json">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <ExcludeFromSingleFile>true</ExcludeFromSingleFile>
+      <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
+    </Content>
+  </ItemGroup>
+
+	<ItemGroup>
+		<PackageReference Include="YoutubeExplode.Converter" Version="6.5.2" />
+	</ItemGroup>
+
+	<ItemGroup>
+		<Folder Include="./ffmpeg-7.1-essentials_build" />
+		<Folder Include="videos\" />
+		<Folder Include="videos\" />
+	</ItemGroup>
+
+
+</Project>
