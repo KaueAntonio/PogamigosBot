@@ -492,3 +492,8 @@ $RECYCLE.BIN/
 *.prod.json
 
 *.mp4
+
+fmpeg
+audios
+
+cookies.txt
