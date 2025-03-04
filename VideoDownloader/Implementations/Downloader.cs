@@ -24,7 +24,7 @@ namespace YoutubeVideoDownloader.Implementations
                 StartInfo = new ProcessStartInfo
                 {
                     FileName = "yt-dlp.exe",
-                    Arguments = $"--cookies {CookiesPath} -x --audio-format mp3 -o \"{outputPath}.%(ext)s\" {url}",
+                    Arguments = $"--cookies {CookiesPath} -x --audio-format mp3 -o \"{outputPath}.%(ext)s\" {url} --ffmpeg-location .\\ffmpeg\\bin\\",
                     RedirectStandardOutput = true,
                     RedirectStandardError = true,
                     UseShellExecute = false,

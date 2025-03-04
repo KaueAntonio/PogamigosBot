@@ -31,7 +31,7 @@ namespace DiscordBot.Worker
                 LogLevel = LogSeverity.Info
             });
 
-            _token = configuration["secrets:token"];
+            _token = configuration["TOKEN"];
 
             _activeThreads = new ConcurrentDictionary<ulong, bool>();
 

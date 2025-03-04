@@ -20,11 +20,14 @@
 
 	<ItemGroup>
 		<Folder Include="audios\" />
-		<Folder Include="videos\" />
 	</ItemGroup>
 
 	<ItemGroup>
 		<None Include="Binaries\*.*">
+			<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+			<Link>%(Filename)%(Extension)</Link>
+		</None>
+		<None Include="ffmpeg\*.*">
 			<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
 			<Link>%(Filename)%(Extension)</Link>
 		</None>
