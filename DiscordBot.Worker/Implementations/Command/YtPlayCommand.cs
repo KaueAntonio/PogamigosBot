@@ -4,17 +4,21 @@ using Discord.Commands;
 using DiscordBot.Worker.Domain.Interfaces;
 using DiscordBot.Worker.Domain.Objects;
 using System.Collections.Concurrent;
-using YoutubeVideoDownloader.Implementations;
 
 namespace DiscordBot.Worker.Implementations.Command
 {
-    public class YtPlayCommand(IMusicService musicService) : ModuleBase<SocketCommandContext>
+    public class YtPlayCommand : ModuleBase<SocketCommandContext>
     {
-        private readonly IMusicService _musicService = musicService;
+        private readonly IMusicService _musicService;
         private static readonly ConcurrentDictionary<ulong, ServerAudioState> _serverAudioStates = new();
 
+        public YtPlayCommand(IMusicService musicService)
+        {
+            _musicService = musicService;
+        }
+
         [Command("play")]
-        public async Task YtDownloadCommand([Remainder] string videoUrl)
+        public async Task PlayAsync([Remainder] string videoUrl)
         {
             var guildId = Context.Guild.Id;
             var channel = (Context.User as IGuildUser)?.VoiceChannel;
@@ -24,35 +28,36 @@ namespace DiscordBot.Worker.Implementations.Command
                 return;
             }
 
-            if (GetState().AudioClient == null || GetState().AudioClient.ConnectionState != ConnectionState.Connected)
+            var state = GetState();
+            if (state.AudioClient == null || state.AudioClient.ConnectionState != ConnectionState.Connected)
             {
-                GetState().AudioClient = await channel.ConnectAsync();
+                state.AudioClient = await channel.ConnectAsync();
             }
 
             _musicService.Add(guildId, videoUrl);
-
-            await ReplyAsync($"Video adicionado.");
+            await ReplyAsync("Música adicionada.");
 
             if (!_musicService.GetStatus(guildId))
             {
-                _ = Task.Run(PlayQueueAsync);
+                _ = Task.Run(() => PlayQueueAsync(guildId));
             }
         }
 
         [Command("skip")]
-        public async Task Skip()
+        public async Task SkipAsync()
         {
             var guildId = Context.Guild.Id;
 
             if (_musicService.GetStatus(guildId))
             {
-                if (GetState().CurrentFfmpegProcess != null && !GetState().CurrentFfmpegProcess.HasExited)
+                var state = GetState();
+                if (state.CurrentFfmpegProcess != null && !state.CurrentFfmpegProcess.HasExited)
                 {
                     try
                     {
-                        GetState().CurrentFfmpegProcess.Kill();
+                        state.CurrentFfmpegProcess.Kill();
                         await Task.Delay(500);
-                        GetState().CurrentFfmpegProcess.Dispose();
+                        state.CurrentFfmpegProcess.Dispose();
                     }
                     catch (Exception ex)
                     {
@@ -60,12 +65,12 @@ namespace DiscordBot.Worker.Implementations.Command
                     }
                     finally
                     {
-                        GetState().CurrentFfmpegProcess = null;
+                        state.CurrentFfmpegProcess = null;
                     }
                 }
 
-                await ReplyAsync("Música skipada.");
-                await PlayMusic();
+                await ReplyAsync("Música pulada.");
+                await PlayMusicAsync(guildId);
             }
             else
             {
@@ -74,10 +79,9 @@ namespace DiscordBot.Worker.Implementations.Command
         }
 
         [Command("queue")]
-        public async Task ShowQueue()
+        public async Task ShowQueueAsync()
         {
             var guildId = Context.Guild.Id;
-
             var musics = _musicService.GetQueue(guildId);
 
             if (musics.Count == 0)
@@ -87,23 +91,20 @@ namespace DiscordBot.Worker.Implementations.Command
             }
 
             await ReplyAsync("Fila de músicas:");
-
-            musics.ForEach(async (x) =>
+            for (int i = 0; i < musics.Count; i++)
             {
-                await ReplyAsync($"{musics.IndexOf(x) + 1} - {_musicService.GetTitle(x)}");
-            });
+                await ReplyAsync($"{i + 1} - {_musicService.GetTitle(musics[i])}");
+            }
         }
 
-        private async Task PlayQueueAsync()
+        private async Task PlayQueueAsync(ulong guildId)
         {
-            var guildId = Context.Guild.Id;
-
             _musicService.SetStatus(guildId, true);
             while (_musicService.HasNext(guildId))
             {
                 try
                 {
-                    await PlayMusic();
+                    await PlayMusicAsync(guildId);
                 }
                 catch (Exception ex)
                 {
@@ -112,34 +113,35 @@ namespace DiscordBot.Worker.Implementations.Command
             }
 
             _musicService.SetStatus(guildId, false);
-            await GetState().AudioClient.StopAsync();
-            GetState().AudioClient = null;
+            var state = GetState();
+            await state.AudioClient.StopAsync();
+            state.AudioClient = null;
         }
 
         private async Task SendAsync(IAudioClient client, string path)
         {
-            GetState().CurrentFfmpegProcess = _musicService.CreateStream(path);
-            using var outputStream = GetState().CurrentFfmpegProcess.StandardOutput.BaseStream;
-
-            GetState().AudioStream = client.CreatePCMStream(AudioApplication.Mixed);
+            var state = GetState();
+            state.CurrentFfmpegProcess = _musicService.CreateStream(path);
+            using var outputStream = state.CurrentFfmpegProcess.StandardOutput.BaseStream;
+            state.AudioStream = client.CreatePCMStream(AudioApplication.Mixed);
 
             try
             {
-                await outputStream.CopyToAsync(GetState().AudioStream);
-                await GetState().AudioStream.FlushAsync();
+                await outputStream.CopyToAsync(state.AudioStream);
+                await state.AudioStream.FlushAsync();
             }
             finally
             {
-                await GetState().AudioStream.DisposeAsync();
-                GetState().AudioStream = null;
+                await state.AudioStream.DisposeAsync();
+                state.AudioStream = null;
 
-                if (GetState().CurrentFfmpegProcess != null && !GetState().CurrentFfmpegProcess.HasExited)
+                if (state.CurrentFfmpegProcess != null && !state.CurrentFfmpegProcess.HasExited)
                 {
                     try
                     {
-                        GetState().CurrentFfmpegProcess.Kill();
+                        state.CurrentFfmpegProcess.Kill();
                         await Task.Delay(500);
-                        GetState().CurrentFfmpegProcess.Dispose();
+                        state.CurrentFfmpegProcess.Dispose();
                     }
                     catch (Exception ex)
                     {
@@ -147,7 +149,7 @@ namespace DiscordBot.Worker.Implementations.Command
                     }
                     finally
                     {
-                        GetState().CurrentFfmpegProcess = null;
+                        state.CurrentFfmpegProcess = null;
                     }
                 }
             }
@@ -156,17 +158,14 @@ namespace DiscordBot.Worker.Implementations.Command
         private ServerAudioState GetState()
         {
             var guildId = Context.Guild.Id;
-
             return _serverAudioStates.GetOrAdd(guildId, new ServerAudioState());
         }
 
-        private async Task PlayMusic()
+        private async Task PlayMusicAsync(ulong guildId)
         {
-            var guildId = Context.Guild.Id;
-
             var videoUrl = _musicService.PlayAnother(guildId);
             var video = await _musicService.GetVideoAsync(videoUrl);
-            await ReplyAsync($"Tocando {video.Title.Split(".mp3")[0]}.");
+            await ReplyAsync($"Tocando {video.Title.Split(".mp3")[0]}");
 
             await SendAsync(GetState().AudioClient, video.Path);
         }

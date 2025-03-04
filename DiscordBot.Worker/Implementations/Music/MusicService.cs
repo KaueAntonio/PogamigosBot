@@ -8,8 +8,8 @@ namespace DiscordBot.Worker.Implementations.Music
 {
     public class MusicService : IMusicService
     {
-        private readonly ConcurrentDictionary<ulong, ConcurrentQueue<string>> _musicQueues = [];
-        private readonly Dictionary<string, string> _musicNames = [];
+        private readonly ConcurrentDictionary<ulong, ConcurrentQueue<string>> _musicQueues = new();
+        private readonly Dictionary<string, string> _musicNames = new();
         private readonly ConcurrentDictionary<ulong, bool> _playingStates = new();
 
         public async void Add(ulong guildId, string music)
@@ -20,14 +20,11 @@ namespace DiscordBot.Worker.Implementations.Music
             queue.Enqueue(music);
 
             var title = await downloader.GetVideoTitleFromUrl(music);
-            _musicNames.Add(music, title);
+            _musicNames[music] = title;
 
             if (!_playingStates.TryGetValue(guildId, out var isPlaying) || !isPlaying)
             {
-                await Task.Run(async () =>
-                {
-                    await downloader.Download(music);
-                });
+                await Task.Run(async () => await downloader.Download(music));
             }
         }
 
@@ -35,7 +32,7 @@ namespace DiscordBot.Worker.Implementations.Music
         {
             if (_musicQueues.TryGetValue(guildId, out var queue))
             {
-                return [..queue];
+                return queue.ToList();
             }
 
             return [];
@@ -56,12 +53,7 @@ namespace DiscordBot.Worker.Implementations.Music
 
         public bool HasNext(ulong guildId)
         {
-            if (_musicQueues.TryGetValue(guildId, out var queue))
-            {
-                return !queue.IsEmpty;
-            }
-
-            return false;
+            return _musicQueues.TryGetValue(guildId, out var queue) && !queue.IsEmpty;
         }
 
         public bool GetStatus(ulong guildId)
@@ -82,9 +74,7 @@ namespace DiscordBot.Worker.Implementations.Music
 
         public string GetTitle(string key)
         {
-            _musicNames.TryGetValue(key, out var name);
-
-            return name;
+            return _musicNames.TryGetValue(key, out var name) ? name : string.Empty;
         }
 
         public Process CreateStream(string path)
@@ -93,7 +83,7 @@ namespace DiscordBot.Worker.Implementations.Music
             {
                 StartInfo = new ProcessStartInfo
                 {
-                    FileName = "ffmpeg",
+                    FileName = ".\\ffmpeg\\bin\\ffmpeg",
                     Arguments = $"-hide_banner -loglevel panic -i \"{path}\" -ac 2 -f s16le -ar 48000 pipe:1",
                     UseShellExecute = false,
                     RedirectStandardOutput = true,

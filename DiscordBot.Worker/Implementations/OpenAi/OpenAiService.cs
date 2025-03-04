@@ -8,12 +8,12 @@ namespace DiscordBot.Worker.Implementations.OpenAi
     {
         private readonly ChatClient _chatClient = new(
             model: "gpt-4o-mini",
-            apiKey: configuration["Secrets:openAiKey"]
+            apiKey: configuration["OPENAI_KEY"]
         );
 
         private readonly ImageClient _imageClient = new(
             model: "dall-e-3",
-            apiKey: configuration["Secrets:openAiKey"]
+            apiKey: configuration["OPENAI_KEY"]
         );
 
         public async Task<string> AnswerAsync(string message)
